@@ -1,0 +1,5 @@
+org\abithana\frontConnector\Visualizer.class
+org\abithana\frontConnector\Visualizer_Prediction.class
+org\abithana\frontConnector\Vizualizer_prescription.class
+org\abithana\frontConnector\Visualizer_UploadPopulationData.class
+org\abithana\frontConnector\Visualizer_UploadCrime.class
