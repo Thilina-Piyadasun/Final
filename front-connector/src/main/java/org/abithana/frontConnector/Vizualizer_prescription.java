@@ -6,12 +6,11 @@ import org.abithana.preprocessor.facade.PreprocessorFacade;
 import org.abithana.prescription.impl.Redistricting.Cluster;
 import org.abithana.prescription.impl.Redistricting.DistrictBoundryDefiner;
 import org.abithana.prescription.impl.patrolBeats.*;
+import org.abithana.statBeans.HistogramBean;
+import org.abithana.statBeans.HistogramBeanDouble;
 import org.apache.spark.sql.DataFrame;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Created by Thilina on 1/22/2017.
@@ -82,14 +81,16 @@ public class Vizualizer_prescription {
 
     }
 
-    public HashMap<Integer,Double> evaluateResponseTime(){
+    public List<HistogramBeanDouble> evaluateResponseTime(){
         HashMap<Integer,Double> evaluate=p.evaluateBeatsResposeime();
 
+        List<HistogramBeanDouble> list=new ArrayList();
         for(int i:evaluate.keySet()){
-            System.out.println("Beats ID : "+ i +" 911 response time :"+evaluate.get(i));
+            list.add(new HistogramBeanDouble(""+i,evaluate.get(i)));
+            System.out.println("Beats ID : " + i + " 911 response time :" + evaluate.get(i));
         }
 
-        return evaluate;
+        return list;
     }
     public double evaluateBeatsWorkload(){
         return p.evaluateBeatsWorkload();

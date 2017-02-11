@@ -1,5 +1,6 @@
 package org.abithana.prescription.impl.patrolBeats;
 
+import akka.dispatch.Foreach;
 import com.graphhopper.GraphHopper;
 
 import org.abithana.prescription.beans.ClusterFitness;
@@ -11,6 +12,7 @@ import org.apache.spark.mllib.tree.impurity.Gini;
 
 import java.io.Serializable;
 import java.util.*;
+import java.util.stream.IntStream;
 
 
 /**
@@ -41,10 +43,10 @@ public class PatrolBoundry implements Serializable {
         System.out.println("           AGGREGATING Blocks TOGETHER                  ");
         System.out.println("========================================================");
 
-        for (int i = 0; i < leaderList.size(); i++) {
+        IntStream.range(0,leaderList.size()).parallel().forEach(i->{
             List<Long> foll=collectAllNeighbours(leaderList.get(i));
             AllLeaderNeighbours.put(leaderList.get(i).getLeaderBlock(),foll);
-        }
+        });
 
         int repeat=0;
         int currntSize=0;
@@ -88,7 +90,7 @@ public class PatrolBoundry implements Serializable {
 
             Set<Long> hs = new HashSet<>();
             hs.addAll(tempNeighbours);
-            int fitness = hs.size() + 5000/(distance+1);
+            int fitness = hs.size() + 10000/(distance+1);
 
             ClusterFitness cf = new ClusterFitness(l, fitness);
             return cf;
@@ -106,14 +108,15 @@ public class PatrolBoundry implements Serializable {
         ArrayList<ClusterFitness> fitnessArrayList=new ArrayList<>();
         ArrayList<DistanceBean> distanceList=new ArrayList<>();
 
-        for (long l:neighbours) {
+        IntStream.range(0,neighbours.size()).parallel().forEach(i->{
 
+            long l=neighbours.get(i);
             BlockCentroidBean blockCentroidBean=follwersMap.get(l);
             if(blockCentroidBean!=null) {
                 int distance =(int) routing.calc(hopper, blockCentroidBean.getLat(), blockCentroidBean.getLon(), leaderBean.getLat(), leaderBean.getLon())[0];
                 distanceList.add(new DistanceBean(l, distance));
             }
-        }
+        });
 
         Collections.sort(distanceList,DistanceBean.distanceComparator);
 
@@ -213,15 +216,15 @@ public class PatrolBoundry implements Serializable {
     {
         HashMap<Integer,ArrayList<Long>> allset=new HashMap<>();
         try{
-            int i=0;
-            for(LeaderBean leaderBean:leaderList){
+            IntStream.range(0,leaderList.size()).parallel().forEach(i->{
+                LeaderBean leaderBean=leaderList.get(i);
                 ArrayList<Long> tractidList=new ArrayList<>();
                 if(leaderBean.getFollowers().size()!=0)
                     tractidList.addAll(leaderBean.getFollowers()) ;
                 tractidList.add(leaderBean.getLeaderBlock());
                 allset.put(i,tractidList);
-                i++;
-            }
+
+            });
         }
         catch (Exception e){
             e.printStackTrace();
@@ -237,7 +240,7 @@ public class PatrolBoundry implements Serializable {
 
         HashMap<Integer,Double> avarageResponseTime=new HashMap<>();
         try{
-            for(int k=0;k<leaderList.size();k++) {
+            IntStream.range(0,leaderList.size()).parallel().forEach(k->{
                 LeaderBean leaderBean = leaderList.get(k);
                 List<BlockCentroidBean> list = leaderBean.getFollowerBeans();
                 list.add(new BlockCentroidBean(leaderBean.getLat(), leaderBean.getLon(), leaderBean.getLeaderBlock(), leaderBean.getLeaderWork()));
@@ -252,8 +255,8 @@ public class PatrolBoundry implements Serializable {
                     }
                 }
                 double avg911 = total911Time / (noOfBlocks * (noOfBlocks - 1));
-                avarageResponseTime.put(k, avg911/60*60);
-            }
+                avarageResponseTime.put(k, avg911/(60*60));
+            });
         }
         catch (Exception e){
             e.printStackTrace();

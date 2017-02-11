@@ -127,6 +127,7 @@ public class PrescriptionData implements Serializable{
         List<PrescriptionDataBean> prescritptionDataJavaRDD2=new ArrayList<>();
 
         //TODO improve the efficiency
+
         for(Long l:map.keySet()){
             PrescriptionDataBean prescritptionData = new PrescriptionDataBean(0, map.get(l).getMidLatitude(), map.get(l).getMidLongitude(), l,l/10000);
             prescritptionDataJavaRDD2.add(prescritptionData);

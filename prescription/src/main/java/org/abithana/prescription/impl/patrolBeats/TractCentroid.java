@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.IntStream;
 
 /**
  * Created by Thilina on 1/4/2017.
@@ -31,8 +32,9 @@ public class TractCentroid implements Serializable{
 
         List<Row> list = instance.getSqlContext().sql("select blockID,categoryWeight,lat,lon from " + tableName).collectAsList();
 
-        for(Row row:list)
-        {
+        IntStream.range(0,list.size()).parallel().forEach(i->{
+        //for(Row row:list)
+            Row row=list.get(i);
             Long blockId = row.getAs("blockID");
             LocationWeightBean locationWeightBean = new LocationWeightBean(row.getAs("categoryWeight"), row.getAs("lat"), row.getAs("lon"));
             if(locationWeightBeansHashMap.get(blockId)==null){
@@ -42,7 +44,7 @@ public class TractCentroid implements Serializable{
             }
             else
                 locationWeightBeansHashMap.get(blockId).add(locationWeightBean);
-        }
+        });
 
         System.out.println("========================================================");
         System.out.println( "CALCULATING BEST CRIME CENTRODIS OF INDIVIDUAL Blocks");
@@ -69,8 +71,8 @@ public class TractCentroid implements Serializable{
         }
         else {
             int[][] weightMatrix=new int[size][size];
-            //IntStream.range(0, size).parallel().forEach(i ->
-            for(int i=0;i<size;i++)
+            IntStream.range(0, size).parallel().forEach(i ->
+            //for(int i=0;i<size;i++)
             {
                 for (int j = i; j < size; j++) {
 
@@ -91,7 +93,7 @@ public class TractCentroid implements Serializable{
                         weightMatrix[j][i] = distance * locations.get(i).getCategoryWeight();
                     }
                 }
-            }
+            });
 
             int minWork=Integer.MAX_VALUE;
             int bestIndex=0;
