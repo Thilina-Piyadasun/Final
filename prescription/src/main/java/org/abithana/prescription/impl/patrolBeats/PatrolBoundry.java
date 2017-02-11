@@ -108,15 +108,15 @@ public class PatrolBoundry implements Serializable {
         ArrayList<ClusterFitness> fitnessArrayList=new ArrayList<>();
         ArrayList<DistanceBean> distanceList=new ArrayList<>();
 
-        IntStream.range(0,neighbours.size()).parallel().forEach(i->{
+        for(long l:neighbours){
 
-            long l=neighbours.get(i);
             BlockCentroidBean blockCentroidBean=follwersMap.get(l);
             if(blockCentroidBean!=null) {
                 int distance =(int) routing.calc(hopper, blockCentroidBean.getLat(), blockCentroidBean.getLon(), leaderBean.getLat(), leaderBean.getLon())[0];
                 distanceList.add(new DistanceBean(l, distance));
             }
-        });
+        }
+
 
         Collections.sort(distanceList,DistanceBean.distanceComparator);
 

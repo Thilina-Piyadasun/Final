@@ -32,8 +32,8 @@ public class TractCentroid implements Serializable{
 
         List<Row> list = instance.getSqlContext().sql("select blockID,categoryWeight,lat,lon from " + tableName).collectAsList();
 
-        IntStream.range(0,list.size()).parallel().forEach(i->{
-        //for(Row row:list)
+        IntStream.range(0,list.size()-1).parallel().forEach(i->{
+            //for(Row row:list)
             Row row=list.get(i);
             Long blockId = row.getAs("blockID");
             LocationWeightBean locationWeightBean = new LocationWeightBean(row.getAs("categoryWeight"), row.getAs("lat"), row.getAs("lon"));
