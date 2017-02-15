@@ -96,5 +96,8 @@ public class Vizualizer_prescription {
         return p.evaluateBeatsWorkload();
     }
 
+    public void evaluateBeatsCompactness(){
+        p.evaluateBeatsCompactness();
+    }
 
 }

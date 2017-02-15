@@ -16,6 +16,7 @@ org\abithana\statBeans\HistogramBean.class
 org\abithana\utill\Converter$1.class
 org\abithana\statBeans\CrimeWithGrid.class
 org\abithana\utill\CrimeUtil.class
+org\abithana\statBeans\HistogramBeanDouble.class
 org\abithana\beans\CrimeDataBeanWithTime.class
 org\abithana\beans\PopulationCrimeBean.class
 org\abithana\prescriptionBeans\PrescriptionDataBean.class

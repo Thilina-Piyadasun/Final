@@ -145,40 +145,6 @@ public class PrescriptionData implements Serializable{
     }
 
 
-    public double getMaxMinLatLonValues(String minorMax,String latOrLong,String tableName){
-
-        String minMaxLatLong=minorMax+"("+latOrLong+")";
-        instance.getSqlContext().sql("select "+minMaxLatLong+" from "+tableName).show(20);
-        Row[] row=instance.getSqlContext().sql("select "+minMaxLatLong+" from "+tableName).collect();
-        double d=0;
-        try {
-            d=row[0].getDouble(0);
-        }catch (Exception e){
-            e.printStackTrace();
-        }
-        return d;
-    }
-
-    public double getMaxHorizontalDistance(double maxLat,double minLat,double maxLong,double minLong){
-
-        double val1=distanceInMeters(maxLat,maxLat,maxLong,minLong);
-        double val2=distanceInMeters(minLat,minLat,maxLong,minLong);
-        if(val1>=val2)
-            return val1;
-        else
-            return val2;
-    }
-
-    public double getMaxVerticalDistance(double maxLat,double minLat,double maxLong,double minLong){
-
-        double val1=distanceInMeters(maxLat,minLat,maxLong,maxLong);
-        double val2=distanceInMeters(maxLat,minLat,minLong,minLong);
-        if(val1>=val2)
-            return val1;
-        else
-            return val2;
-    }
-
     private double distanceInMeters(double lat1, double lat2, double lon1,
         double lon2) {
 

@@ -88,15 +88,17 @@ public class PatrolBoundry implements Serializable {
         if(follwersMap.get(l)!=null) {
             tempNeighbours.addAll(getNeighbours(follwersMap.get(l).getBlockID()));
 
-            Set<Long> hs = new HashSet<>();
-            hs.addAll(tempNeighbours);
-            int fitness = hs.size() + 10000/(distance+1);
+            Set<Long> ClusterSpredSet = new HashSet<>();
+            ClusterSpredSet.addAll(tempNeighbours);
+
+            int fitness = ClusterSpredSet.size() + 5000/(distance+1);
 
             ClusterFitness cf = new ClusterFitness(l, fitness);
             return cf;
         }
         return new ClusterFitness(0, -1000);
     }
+
     private int addtoCluster(LeaderBean leaderBean){
 
         List<Long> neighbours = collectAllNeighbours(leaderBean);
@@ -117,8 +119,7 @@ public class PatrolBoundry implements Serializable {
             }
         }
 
-
-        Collections.sort(distanceList,DistanceBean.distanceComparator);
+        Collections.sort(distanceList, DistanceBean.distanceComparator);
 
         int i=0;
         while(i<4 && i < distanceList.size())
@@ -223,7 +224,6 @@ public class PatrolBoundry implements Serializable {
                     tractidList.addAll(leaderBean.getFollowers()) ;
                 tractidList.add(leaderBean.getLeaderBlock());
                 allset.put(i,tractidList);
-
             });
         }
         catch (Exception e){
@@ -251,7 +251,6 @@ public class PatrolBoundry implements Serializable {
                         if (i != j) {
                             total911Time = total911Time + calcRoadDistance(list.get(i).getLat(), list.get(i).getLon(), list.get(j).getLat(), list.get(j).getLon())[1];
                         }
-
                     }
                 }
                 double avg911 = total911Time / (noOfBlocks * (noOfBlocks - 1));
@@ -305,11 +304,37 @@ public class PatrolBoundry implements Serializable {
     */
     public HashMap<Integer,Double> evaluateBeatsCompactness(){
 
-        HashMap<Integer,Double> compactness=new HashMap<>();
+        HashMap<Integer,Double> compactnessMap=new HashMap<>();
         try{
-            for(LeaderBean lb:leaderList) {
-              //  workload.add(lb.getLeaderWork());
-            }
+
+            IntStream.range(0,leaderList.size()).parallel().forEach(k->{
+
+                LeaderBean lb=leaderList.get(k);
+                List<BlockCentroidBean> blockList=lb.getFollowerBeans();
+                List<Long> blockIdList=lb.getFollowers();
+
+                Collections.sort(blockList,BlockCentroidBean.latComparator);
+                double minlat=blockList.get(0).getLat();
+                double maxlat=blockList.get(blockList.size()-1).getLat();
+
+                Collections.sort(blockList,BlockCentroidBean.lonComparator);
+                double minlon=blockList.get(0).getLon();
+                double maxlon=blockList.get(blockList.size()-1).getLon();
+
+                double r1=getMaxHorizontalDistance(maxlat,minlat,maxlon,minlon)/1000;
+                double r2=getMaxVerticalDistance(maxlat,minlat,maxlon,minlon)/1000;
+
+                double perimenter=2*(r1+r2);
+                double effectiveArea=checker.getArea(blockIdList);
+                double squreArea=r1*r2;
+
+                double comapactness=effectiveArea/squreArea;
+                double comapactness2=(4*22*effectiveArea)/(7*perimenter*perimenter);
+
+                System.out.println("compactness  "+ comapactness);
+                System.out.println("compactness2  "+ comapactness2);
+                compactnessMap.put(k,comapactness);
+            });
 
 
         }
@@ -317,7 +342,7 @@ public class PatrolBoundry implements Serializable {
             e.printStackTrace();
         }
 
-        return compactness;
+        return compactnessMap;
 
     }
 
@@ -434,6 +459,10 @@ public class PatrolBoundry implements Serializable {
             return val1;
         else
             return val2;
+        /*if(val1>=val2)
+            return val1;
+        else
+            return val2;*/
     }
 
     public double getMaxVerticalDistance(double maxLat,double minLat,double maxLong,double minLong){
@@ -445,6 +474,8 @@ public class PatrolBoundry implements Serializable {
         else
             return val2;
     }
+
+
 
     private double distanceInMeters(double lat1, double lat2, double lon1,
                                     double lon2) {

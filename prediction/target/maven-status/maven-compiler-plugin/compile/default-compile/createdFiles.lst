@@ -1,0 +1,6 @@
+org\abithana\prediction\MultilayerPerceptronCrimeClassifier.class
+org\abithana\prediction\NaiveBaysianCrimeClassifier.class
+org\abithana\prediction\Evaluation.class
+org\abithana\prediction\MLDataParser.class
+org\abithana\prediction\RandomForestCrimeClassifier.class
+org\abithana\prediction\ClassificationModel.class

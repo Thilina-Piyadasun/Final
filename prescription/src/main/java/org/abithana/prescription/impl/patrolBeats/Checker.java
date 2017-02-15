@@ -46,6 +46,16 @@ public class Checker implements Serializable{
         extractDataFromBoundry();
     }
 
+    public double getArea(List<Long> idList) {
+        double area = 0;
+        for (long id : idList) {
+            CensusBlock mainBlock = censusMap.get((Long) id);
+            area += mainBlock.getBlockPolygon().getArea();
+        }
+
+        return area * 100 * 98;
+    }
+
     public long polygonChecker(double[] point) {
 
 
