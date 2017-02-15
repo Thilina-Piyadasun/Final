@@ -85,23 +85,56 @@ public class PatrolBoundry implements Serializable {
     private ClusterFitness calcFitness(LeaderBean leaderBean,long l,int distance){
         List<Long> tempNeighbours=new ArrayList<>();
         tempNeighbours = collectAllNeighbours(leaderBean);
+        double compactness=0;
         if(follwersMap.get(l)!=null) {
             tempNeighbours.addAll(getNeighbours(follwersMap.get(l).getBlockID()));
 
             Set<Long> ClusterSpredSet = new HashSet<>();
             ClusterSpredSet.addAll(tempNeighbours);
+            /*******************************************************/
 
-            fitness = ClusterSpredSet.size() + 1000/(distance+1);
+        if(leaderBean.getFollowerBeans().size()>10) {
+            Collections.sort(leaderBean.getFollowerBeans(), BlockCentroidBean.latComparator);
+
+            double minlat = leaderBean.getFollowerBeans().get(0).getLat();
+            double maxlat = leaderBean.getFollowerBeans().get(leaderBean.getFollowerBeans().size() - 1).getLat();
+
+            Collections.sort(leaderBean.getFollowerBeans(), BlockCentroidBean.lonComparator);
+            double minlon = leaderBean.getFollowerBeans().get(0).getLon();
+            double maxlon = leaderBean.getFollowerBeans().get(leaderBean.getFollowerBeans().size() - 1).getLon();
+
+            double r1 = getMaxHorizontalDistance(maxlat, minlat, maxlon, minlon) / 1000;
+            double r2 = getMaxVerticalDistance(maxlat, minlat, maxlon, minlon) / 1000;
+
+            leaderBean.getFollowerBeans().add(follwersMap.get(l));
+            Collections.sort(leaderBean.getFollowerBeans(), BlockCentroidBean.latComparator);
+            double minlatNew = leaderBean.getFollowerBeans().get(0).getLat();
+            double maxlatnew = leaderBean.getFollowerBeans().get(leaderBean.getFollowerBeans().size() - 1).getLat();
+
+            Collections.sort(leaderBean.getFollowerBeans(), BlockCentroidBean.lonComparator);
+            double minlonNew = leaderBean.getFollowerBeans().get(0).getLon();
+            double maxlonnew = leaderBean.getFollowerBeans().get(leaderBean.getFollowerBeans().size() - 1).getLon();
+
+            double r1new = getMaxHorizontalDistance(maxlatnew, minlatNew, maxlonnew, minlonNew) / 1000;
+            double r2new = getMaxVerticalDistance(maxlatnew, minlatNew, maxlonnew, minlonNew) / 1000;
+
+            compactness = 50000 * ((r2new * r1new) - (r1 * r2));
+            leaderBean.getFollowerBeans().remove(follwersMap.get(l));
+        }
+            /***************************************************/
+            fitness = ClusterSpredSet.size() + 5000/(distance+1) - (int)compactness ;
 
             ClusterFitness cf = new ClusterFitness(l, fitness);
+
             return cf;
         }
-        return new ClusterFitness(0, -1000);
+        return new ClusterFitness(0, -1000000000);
     }
 
     private int addtoCluster(LeaderBean leaderBean){
 
         List<Long> neighbours = collectAllNeighbours(leaderBean);
+
         if(neighbours==null){
             System.out.println("neighbours null");
             return -1;
@@ -111,12 +144,13 @@ public class PatrolBoundry implements Serializable {
         ArrayList<DistanceBean> distanceList=new ArrayList<>();
 
         for(long l:neighbours){
-
-            BlockCentroidBean blockCentroidBean=follwersMap.get(l);
-            if(blockCentroidBean!=null) {
-                int distance =(int) routing.calc(hopper, blockCentroidBean.getLat(), blockCentroidBean.getLon(), leaderBean.getLat(), leaderBean.getLon())[0];
-                distanceList.add(new DistanceBean(l, distance));
+            if(follwersMap.get(l)==null){
+                continue;
             }
+            BlockCentroidBean blockCentroidBean=follwersMap.get(l);
+            int distance =(int) routing.calc(hopper, blockCentroidBean.getLat(), blockCentroidBean.getLon(), leaderBean.getLat(), leaderBean.getLon())[0];
+            distanceList.add(new DistanceBean(l, distance));
+
         }
 
         Collections.sort(distanceList, DistanceBean.distanceComparator);
@@ -129,7 +163,7 @@ public class PatrolBoundry implements Serializable {
             //int distance2=follwersMap.get(distanceList.get(i).getBlockId()).getWork()/distance;
 
             ClusterFitness cf=calcFitness(leaderBean,blockId,distance);
-            if(cf.getFitness()>0){
+            if(cf.getFitness()>-1000000000){
                 fitnessArrayList.add(cf);
             }
             i++;
@@ -158,7 +192,6 @@ public class PatrolBoundry implements Serializable {
                 leaderBean.addFollowerBean(follwersMap.get(blockId));
                 leaderBean.incrementLeaderWork(follwersMap.get(blockId).getWork() + distance);
                 toalWork = toalWork + distance;
-               // neighbours.addAll(getNeighbours(follwersMap.get(blockId).getBlockID()));
                 AllLeaderNeighbours.put(leaderBean.getLeaderBlock(), neighbours);
                 follwers.remove(follwersMap.remove(blockId));
                 follwersMap.remove(blockId);

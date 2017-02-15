@@ -21,6 +21,7 @@ import java.util.List;
  */
 public class Visualizer  implements Serializable{
 
+    private int state=0;
     private String[] dropColumns={"resolution","descript","address"};
 
     PreprocessorFacade preprocessorFacade=new PreprocessorFacade();
@@ -32,13 +33,14 @@ public class Visualizer  implements Serializable{
     public void doPreprocessing(String prepTableName){
 
         DataFrame df= initaldataStore.getDataFrame();
+        state=1;
         DataFrame f2=preprocessorFacade.handelMissingValues(df);
-
+        state=2;
         List columns= Arrays.asList(f2.columns());
         if(columns.contains("dateAndTime")&&(!columns.contains("Time"))) {
             f2=preprocessorFacade.getTimeIndexedDF(f2, "dateAndTime");
         }
-
+        state=3;
         for(String s: dropColumns){
             f2=preprocessorFacade.dropCol(f2,s);
         }
@@ -47,12 +49,19 @@ public class Visualizer  implements Serializable{
         preProcesedDataStore.saveTable(f2,prepTableName);
         if(populationDataStore.getDataFrame()!=null) {
             f2 = preprocessorFacade.integratePopulationData(populationDataStore.getTableName(), prepTableName);
+            state=4;
         }
 
 
         preProcesedDataStore.saveTable(f2,prepTableName);
+        state=5;
         preProcesedDataStore.getDataFrame().show(40);
     }
+
+    public int getState(){
+        return state;
+    }
+
     /*
     * to execute queries from visualization
     * */

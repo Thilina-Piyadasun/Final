@@ -17,6 +17,7 @@ import java.util.*;
  */
 public class Vizualizer_prescription {
 
+    private int state=0;
     PreprocessorFacade preprocessorFacade=new PreprocessorFacade();
     PreprocessedCrimeDataStore preprocessedCrimeDataStore=PreprocessedCrimeDataStore.getInstance();
     CrimeDataStore initaldataStore=CrimeDataStore.getInstance();
@@ -66,11 +67,14 @@ public class Vizualizer_prescription {
 
         if(districtBoundryDefiner!=null) {
             prescriptionData.createPrescriptionDs(districtBoundryDefiner, districtID, prescriptionTblName, query);
-
+            state=10;
             Checker ch = new Checker();
             p.getLearders( t.getAllBlockCentroids(prescriptionTblName),patrolBeats);
+            state=20;
             p.calcThreashold( t.getToalWork(),patrolBeats);
+            state=50;
             p.findPatrolBoundries();
+            state=80;
             return ch.convertToCluster(p.getBoundryTractids());
         }
         else {
@@ -100,4 +104,13 @@ public class Vizualizer_prescription {
         p.evaluateBeatsCompactness();
     }
 
+    /*
+    * State value represents how far computation has done
+    * state=20 represents 20% computations done
+    * state=80 represents 80% computations done
+    *
+    * */
+    public int getState(){
+        return state;
+    }
 }

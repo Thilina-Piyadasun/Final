@@ -58,17 +58,18 @@ public class PrescriptionData implements Serializable{
             String query="Select *  from " + datasetUsing ;
             if(weekdays==1){
                 query=query+ " where dayOfWeek not LIKE 'SAT%' and dayOfWeek not like 'SUN%' ";
-                query=query+"and " +filterSeason(seasonId);
-                query=query+"and " +filterTime(watchId);
+                query=query+" and " +filterSeason(seasonId);
+                query=query+" and " +filterTime(watchId);
             }
             else if(weekdays==2) {
                 query=query+" where dayOfWeek LIKE 'SAT%' or dayOfWeek  like 'SUN%' ";
-                query=query+"and " + filterSeason(seasonId);
-                query=query+"and " + filterTime(watchId);
+                query=query+" and " + filterSeason(seasonId);
+                query=query+" and " + filterTime(watchId);
             }
             if(weekdays==0){
-                query=query+ " where ";
-                query=query+ filterTime(watchId);
+                query=query+ " where 1=1";
+                query=query+" and " + filterSeason(seasonId);
+                query=query+" and " + filterTime(watchId);
             }
 
             return query;
