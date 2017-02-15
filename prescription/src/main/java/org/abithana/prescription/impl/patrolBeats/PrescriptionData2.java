@@ -1,29 +1,20 @@
 package org.abithana.prescription.impl.patrolBeats;
 
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import org.abithana.prescription.beans.CensusBlock;
 import org.abithana.prescription.impl.Redistricting.DistrictBoundryDefiner;
 import org.abithana.prescriptionBeans.PrescriptionDataBean;
 import org.abithana.utill.Config;
-import org.apache.commons.collections.list.AbstractListDecorator;
-import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.sql.DataFrame;
 import org.apache.spark.sql.Row;
 
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.Serializable;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.util.*;
 
 /**
  * Created by Thilina on 12/28/2016.
  */
-public class PrescriptionData implements Serializable{
+public class PrescriptionData2 implements Serializable{
 
     private final int DISTANCE_GAP_IN_METERS=500; //in meters
 
@@ -39,6 +30,7 @@ public class PrescriptionData implements Serializable{
     private double dLat;
     private double dLon;
     HashMap<Long, HashSet<Long>> tractsOfDistricts=new HashMap<>();
+    HashMap<Long, List<PrescriptionDataBean>> prescriptionDataMap=new HashMap<>();
 
     public DataFrame createPrescriptionDs(DistrictBoundryDefiner districtBoundryDefiner,Long districtId,String prescriptionTable,String patrolQuery){
         this.districtBoundryDefiner=districtBoundryDefiner;
@@ -53,17 +45,15 @@ public class PrescriptionData implements Serializable{
    * 1- weekdays
    * 2- weekends
    * */
-    public String patrolQueryGenerator(String datasetUsing,int weekdays,int watchId,int seasonId){
+    public String patrolQueryGenerator(String datasetUsing,int weekdays,int watchId){
         try {
             String query="Select *  from " + datasetUsing ;
             if(weekdays==1){
                 query=query+ " where dayOfWeek not LIKE 'SAT%' and dayOfWeek not like 'SUN%' ";
-                query=query+"and " +filterSeason(seasonId);
                 query=query+"and " +filterTime(watchId);
             }
             else if(weekdays==2) {
                 query=query+" where dayOfWeek LIKE 'SAT%' or dayOfWeek  like 'SUN%' ";
-                query=query+"and " + filterSeason(seasonId);
                 query=query+"and " + filterTime(watchId);
             }
             if(weekdays==0){
@@ -91,23 +81,6 @@ public class PrescriptionData implements Serializable{
             timeFIlter=" ((time > 21 and time <= 24) or (time >=0 and time <=4)) ";
 
         return timeFIlter;
-    }
-
-    public String filterSeason(int id){
-        String seasonFIlter="";
-        if(id==0){
-            seasonFIlter = "1=1";
-        }
-        if(id==1)
-            seasonFIlter="  month > 0 and month <= 3 ";
-        if(id==2)
-            seasonFIlter="  month > 3 and month <= 6 ";
-        if(id==3)
-            seasonFIlter="  month > 6 and month <= 9 ";
-        if(id==4)
-            seasonFIlter="  month > 9 and month <= 12 ";
-
-        return seasonFIlter;
     }
 
     public DataFrame integrateTractID(Long districtId,String prescriptionTable){

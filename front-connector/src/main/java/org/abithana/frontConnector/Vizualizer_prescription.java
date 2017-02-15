@@ -61,7 +61,7 @@ public class Vizualizer_prescription {
         prescriptionData.setCategory("category");
         prescriptionData.setLat("latitude");
         prescriptionData.setLon("longitude");
-        String query=prescriptionData.patrolQueryGenerator(tblname, weekdays, watch);
+        String query=prescriptionData.patrolQueryGenerator(tblname, weekdays, watch,season);
         String prescriptionTblName="prescription";
 
         if(districtBoundryDefiner!=null) {
