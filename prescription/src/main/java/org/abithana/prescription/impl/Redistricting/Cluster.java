@@ -1,7 +1,10 @@
 package org.abithana.prescription.impl.Redistricting;
 
+import com.vividsolutions.jts.geom.*;
+
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
 
@@ -18,10 +21,10 @@ public class Cluster implements Serializable {
     private double f = 0;
     private long population = 0;
 
-    private double minLongitude = 0;
-    private double minLatitude = 0;
-    private double maxLongitude = 0;
-    private double maxLatitude = 0;
+    private double minLongitude = 3600;
+    private double minLatitude = 360;
+    private double maxLongitude = -360;
+    private double maxLatitude = -360;
     private HashSet<Long> censusIds = new HashSet<Long>();
     public HashSet<CensusTract> cencusTracts = new HashSet<CensusTract>();
 
@@ -48,9 +51,9 @@ public class Cluster implements Serializable {
                 /*
                 * to compare ascending order
                 * */
-            if( (o1.getG() < o2.getG()) ) {
+            if ((o1.getG() < o2.getG())) {
                 return -1;
-            } else if((o1.getG() == o2.getG()) ) {
+            } else if ((o1.getG() == o2.getG())) {
                 return 0;
             } else {
                 return 1;
@@ -63,9 +66,9 @@ public class Cluster implements Serializable {
                 /*
                 * to compare descending order
                 * */
-            if( (o1.getG() < o2.getG()) ) {
+            if ((o1.getG() < o2.getG())) {
                 return 1;
-            } else if((o1.getG() == o2.getG()) ) {
+            } else if ((o1.getG() == o2.getG())) {
                 return 0;
             } else {
                 return -1;
@@ -79,9 +82,9 @@ public class Cluster implements Serializable {
                 /*
                 * to compare ascending order
                 * */
-            if( (o1.getF() < o2.getF()) ) {
+            if ((o1.getF() < o2.getF())) {
                 return -1;
-            } else if((o1.getF() == o2.getF()) ) {
+            } else if ((o1.getF() == o2.getF())) {
                 return 0;
             } else {
                 return 1;
@@ -94,9 +97,9 @@ public class Cluster implements Serializable {
                 /*
                 * to compare descending order
                 * */
-            if( (o1.getF() < o2.getF()) ) {
+            if ((o1.getF() < o2.getF())) {
                 return 1;
-            } else if((o1.getF() == o2.getF()) ) {
+            } else if ((o1.getF() == o2.getF())) {
                 return 0;
             } else {
                 return -1;
@@ -243,6 +246,109 @@ public class Cluster implements Serializable {
 
     public void setMaxLatitude(double maxLatitude) {
         this.maxLatitude = maxLatitude;
+    }
+
+    public double getArea() {
+        double area = 0;
+        for (CensusTract mainBlock : cencusTracts) {
+            area += mainBlock.getBlockPolygon().getArea();
+        }
+        return area*98*95;
+    }
+    public double perimeterOfclus() {
+        double peremeter = 0;
+        Collection<Geometry> geometryCollection = new ArrayList<>();
+        for (CensusTract ct : cencusTracts) {
+
+            geometryCollection.add(ct.getBlockPolygon());
+        }
+        GeometryFactory factory = new GeometryFactory();
+
+        // note the following geometry collection may be invalid (say with overlapping polygons)
+        GeometryCollection geometryCollection1 =
+                (GeometryCollection) factory.buildGeometry( geometryCollection );
+
+        Geometry union = geometryCollection1.buffer(0);
+
+        peremeter = union.getLength();
+
+        return peremeter;
+    }
+
+    public double perimeterOfRect() {
+        DistanceCalculator distanceCalculator = new DistanceCalculator();
+
+        double distanceOfSSide = distanceCalculator.distance(minLatitude, minLongitude, maxLatitude,
+                minLongitude, "K");
+        double distanceOfLSide = distanceCalculator.distance(maxLatitude, minLongitude, maxLatitude,
+                maxLongitude, "K");
+        double recPerimeter = (2*distanceOfSSide + 2*distanceOfLSide);
+
+        return recPerimeter;
+    }
+
+
+
+    public double isoperimetricQuotientWithCensus(CensusTract census) {
+        double isoQuotient = 0;
+        isoQuotient = (4 * Math.PI * getAreaWithCensus(census))/ (perimeterOfclusWithCensus(census) *
+                perimeterOfclusWithCensus
+                (census));
+        return isoQuotient;
+    }
+
+    public double getAreaWithCensus(CensusTract census) {
+        double area = 0;
+        for (CensusTract mainBlock : cencusTracts) {
+            area += mainBlock.getBlockPolygon().getArea();
+        }
+
+        return area*98*95;
+    }
+    public double perimeterOfclusWithCensus(CensusTract census) {
+        double peremeter = 0;
+        Collection<Geometry> geometryCollection = new ArrayList<>();
+        for (CensusTract ct : cencusTracts) {
+            geometryCollection.add(ct.getBlockPolygon());
+        }
+
+        GeometryFactory factory = new GeometryFactory();
+
+        // note the following geometry collection may be invalid (say with overlapping polygons)
+        GeometryCollection geometryCollection1 =
+                (GeometryCollection) factory.buildGeometry( geometryCollection );
+
+        Geometry union = geometryCollection1.buffer(0);
+
+        peremeter = union.getLength();
+
+        return peremeter;
+    }
+
+    public double isoperimetricQuotient() {
+        double isoQuotient = 0;
+        isoQuotient = (getArea())/ (perimeterOfRect());
+        return isoQuotient;
+    }
+
+    public double[] maxminLonreturn() {
+        double[] lonList = new double[5];
+        lonList[0] = getMinLongitude();
+        lonList[1] = getMinLongitude();
+        lonList[2] = getMaxLongitude();
+        lonList[3] = getMaxLongitude();
+        lonList[4] = getMinLongitude();
+        return lonList;
+    }
+
+    public double[] maxminLatreturn() {
+        double[] latList = new double[5];
+        latList[0] = getMinLatitude();
+        latList[1] = getMaxLatitude();
+        latList[2] = getMaxLatitude();
+        latList[3] = getMinLatitude();
+        latList[4] = getMinLatitude();
+        return latList;
     }
 
 }
