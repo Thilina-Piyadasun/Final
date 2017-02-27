@@ -1,37 +1,23 @@
 package org.abithana.prescription.impl.Redistricting;
 
+import com.vividsolutions.jts.geom.*;
+
 import java.io.Serializable;
-import java.lang.Double;
-import java.lang.Integer;
-import java.lang.Long;
-import java.lang.Math;
-import java.lang.String;
-import java.lang.System;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-
-
-/**
- * Created by malakaganga on 1/3/17.
- */
-
 import java.util.*;
 
+
 /**
  * Created by malakaganga on 1/3/17.
  */
 
 
-public class DistrictBoundryDefiner implements Serializable{
+public class DistrictBoundryDefiner implements Serializable {
 
     private long k = 10;
+    private long numOfD;
     private final double pi = Math.PI;
     private long populationTotal = 805704;
-    private long x = populationTotal / k;
+    private long x;
 
     private ArrayList<CensusTract> censusTracts = new ArrayList<CensusTract>(); // to hold census tracts
     private HashMap<Long, CensusTract> censusMap = new HashMap<Long, CensusTract>();
@@ -39,27 +25,64 @@ public class DistrictBoundryDefiner implements Serializable{
 
     private ArrayList<Cluster> clusterCol = new ArrayList<Cluster>();
     private HashMap<Long, Cluster> clusters = new HashMap<Long, Cluster>();
+
+
     private HashMap<Long, Cluster> finishedClusters = new HashMap<Long, Cluster>();
+
+
+    private HashMap<Long, Cluster> seedClusters = new HashMap<Long, Cluster>();
 
 
     public DistrictBoundryDefiner(long numberOfDistricts, long populationTotal) {
         this.k = numberOfDistricts;
         this.populationTotal = populationTotal;
+        this.x = populationTotal / k;
+        numOfD = numberOfDistricts;
+    }
+    public HashMap<Long, Cluster> getFinishedClusters() {
+        return finishedClusters;
+    }
+
+
+    public HashMap<Long, Cluster> getSeedClusters() {
+        return seedClusters;
+    }
+
+    public void setSeedClusters(HashMap<Long, Cluster> seedClusters) {
+        this.seedClusters = seedClusters;
     }
 
     public static void main(String[] args) {
-        DistrictBoundryDefiner dbd = new DistrictBoundryDefiner(10, 805704);
-        HashMap<Long, Cluster> map = dbd.redrawingDistrictBoundry();
+        DistrictBoundryDefiner dbd = new DistrictBoundryDefiner(10, 802355);
+        dbd.redrawingDistrictBoundry();
+        HashMap<Long, Cluster> map = dbd.getFinishedClusters();
         int count = 0;
         for (Long id : map.keySet()) {
             System.out.println("\n Cluster id = " + id + " X =" + map.get(id).getX() + " population = " + map.get(id)
                     .getPopulation() + " \n");
-            for (CensusTract ceId : map.get(id).cencusTracts) {
+            Cluster cl = map.get(id);
+
+            System.out.println("Area " + cl.getArea() + " Area of Mul " + cl.perimeterOfclus() + " \n");
+            System.out.println("\nMin Lat =" + cl.getMinLatitude() + " Min Long = " + cl.getMinLongitude() + " Max " +
+                    "Lat = " + cl.getMaxLatitude() + " Max Long = " + cl.getMaxLongitude() + "\n **** Iso coeffient"
+                    + cl
+                    .isoperimetricQuotient() + "*****\n");
+
+            for (Long ids : cl.getCensusIds()) {
+                cl.isoperimetricQuotientWithCensus(dbd.addedToClustersTracts.get(0));
                 count++;
-                System.out.print(" ," + ceId.getCensusId());
             }
+
         }
-        System.out.println("\n\n\n\n " + count + "\n\n\n");
+        System.out.println("\n\n\n\n " + count + "\n\n\nGinicoefficient = " + dbd.getGiniCoefficient());
+
+       /* HashMap<Long, Cluster> seedClusters = dbd.getSeedClusters();
+        for (Cluster clu : seedClusters.values()) {
+            System.out.println("\n Cluster id" + clu.getClusterId() + " Size of census tracts =" + clu.getCensusIds()
+                    .size() + " ");
+            System.out.println("\n Census id =" + (clu.getCensusIds()).iterator().next() + " Pereimeter = " + clu
+                    .perimeterOfclus());
+        }*/
     }
 
     public HashMap<Long, HashSet<Long>> getTractsOfDistricts() {
@@ -103,11 +126,11 @@ public class DistrictBoundryDefiner implements Serializable{
             }
         }
 
-        for (Cluster cl : finishedClusters.values()) {
+       /* for (Cluster cl : finishedClusters.values()) {
             for (long id : cl.getCensusIds()) {
                 cl.cencusTracts.add(censusMap.get(id));
             }
-        }
+        }*/
 
         return finishedClusters;
 
@@ -182,9 +205,24 @@ public class DistrictBoundryDefiner implements Serializable{
 
             censusTract.setPerimeter();
 
+            GeometryFactory fact = new GeometryFactory();
+            Coordinate cor;
+            Coordinate[] coordinates = new Coordinate[longitudes.size()];
+            for (int j = 0; j < longitudes.size(); j++) {
+                cor = new Coordinate(longitudes.get(j), latitudes.get(j));
+                coordinates[j] = cor;
+            }
+            LinearRing linear = new GeometryFactory().createLinearRing(coordinates);
+            Geometry poly = new Polygon(linear, null, fact);
+
+            //add created polygon into block
+            censusTract.setBlockPolygon((Geometry) poly);
+
             //add census tract to list of tracts and map of tracts
 
-            if (id == Long.parseLong("6075990100") || id == Long.parseLong("6075980401")) {
+
+            if (id == Long.parseLong("6075017902") || id == Long.parseLong("6075990100") || id == Long.parseLong
+                    ("6075980401")) {
                 continue;
             }
             censusTracts.add(censusTract);
@@ -212,8 +250,10 @@ public class DistrictBoundryDefiner implements Serializable{
 
                 id = Long.parseLong(column[0]);
                 value = Long.parseLong(column[1]);
-                if (id == Long.parseLong("6075990100") || id == Long.parseLong("6075980401") || value == Long.parseLong
-                        ("6075990100") || value == Long.parseLong("6075980401")) {
+                if (id == Long.parseLong("06075017902") || id == Long.parseLong("6075990100") || id == Long.parseLong
+                        ("6075980401") || value == Long.parseLong
+                        ("6075990100") || value == Long.parseLong("06075017902") || value == Long.parseLong
+                        ("6075980401")) {
                     continue;
                 }
 
@@ -258,7 +298,8 @@ public class DistrictBoundryDefiner implements Serializable{
                         value = Long.parseLong(columns[j]);
                     }
                 }
-                if (id == Long.parseLong("6075990100") || id == Long.parseLong("6075980401")) {
+                if (id == Long.parseLong("06075017902") || id == Long.parseLong("6075990100") || id == Long.parseLong
+                        ("6075980401")) {
                     continue;
                 }
 
@@ -294,6 +335,14 @@ public class DistrictBoundryDefiner implements Serializable{
         clusters.put(clusterId, cluster);
         clusterCol.add(cluster);
 
+         /*Put new cluster into seed collection*/
+        Cluster clusterSeed0 = new Cluster();
+        clusterSeed0.setClusterId(clusterId);
+        clusterSeed0.setX(x);
+        addCensusTractToCluster(clusterSeed0, censusTracts.get(0));
+        seedClusters.put(clusterId, clusterSeed0);
+
+
         while (true) {
             if ((clusterId + 1) >= k || count >= 195) {
                 break;
@@ -308,6 +357,13 @@ public class DistrictBoundryDefiner implements Serializable{
 
                 clusters.put(clusterId, cluster);
                 clusterCol.add(cluster);
+
+                /*Put new cluster into seed collection*/
+                Cluster clusterSeed = new Cluster();
+                clusterSeed.setClusterId(clusterId);
+                clusterSeed.setX(x);
+                addCensusTractToCluster(clusterSeed, censusTracts.get(count));
+                seedClusters.put(clusterId, clusterSeed);
             }
             count++;
         }
@@ -325,6 +381,7 @@ public class DistrictBoundryDefiner implements Serializable{
         HashSet<Long> neighboursOfCluster;
         ArrayList<CensusTract> actualNeighbours;
 
+
         for (Cluster cluster1 : clusterCol) {
 
             neighboursOfCluster = new HashSet<Long>();
@@ -336,38 +393,86 @@ public class DistrictBoundryDefiner implements Serializable{
             for (Long id : neighboursOfCluster) {
                 actualNeighbours.add(censusMap.get(id));
             }
+
             if (actualNeighbours.size() == 0) {
                 continue;
             }
 
-            Collections.sort(actualNeighbours, CensusTract.perimeterComparator); // neighbours are sorted according to
+            //Collections.sort(actualNeighbours, CensusTract.perimeterComparator);
+            // neighbours are sorted according to
             // perimeter
+            ArrayList<CensusWithF> sameClusDiffF = new ArrayList<CensusWithF>();
 
-            CensusTract ct = actualNeighbours.get(0);
+            //loop over all neighbours
 
-            double maxLong = (cluster1.getMaxLongitude() >= ct.getMaxLongitude()) ? cluster1.getMaxLongitude() : ct
-                    .getMaxLongitude();
+            for (CensusTract ct : actualNeighbours) {
 
-            double maxLat = (cluster1.getMaxLatitude() >= ct.getMaxLatitude()) ? cluster1.getMaxLatitude() : ct
-                    .getMaxLatitude();
+                double maxLong = (cluster1.getMaxLongitude() >= ct.getMaxLongitude()) ? cluster1.getMaxLongitude() : ct
+                        .getMaxLongitude();
 
-            double minLong = (cluster1.getMinLongitude() <= ct.getMinLongitude()) ? cluster1.getMinLongitude() : ct
-                    .getMinLongitude();
+                double maxLat = (cluster1.getMaxLatitude() >= ct.getMaxLatitude()) ? cluster1.getMaxLatitude() : ct
+                        .getMaxLatitude();
 
-            double minLat = (cluster1.getMinLatitude() <= ct.getMinLatitude()) ? cluster1.getMinLatitude() : ct
-                    .getMinLatitude();
+                double minLong = (cluster1.getMinLongitude() <= ct.getMinLongitude()) ? cluster1.getMinLongitude() : ct
+                        .getMinLongitude();
 
-            double previousG = cluster1.getG();
-            double newG = perimeterOfRectangle(minLat,minLong,maxLat,maxLong);
+                double minLat = (cluster1.getMinLatitude() <= ct.getMinLatitude()) ? cluster1.getMinLatitude() : ct
+                        .getMinLatitude();
 
-            cluster1.setF(cluster1.getH() + (previousG - newG));// set the f as
-            // minimum perimeter + existing h so we can choose minimum population + minimum cost to grow
+                double previousG = cluster1.getG(); // get existing area
+
+                double newG = perimeterOfRectangle(minLat, minLong, maxLat, maxLong); // get area after added the census
+
+                CensusWithF cf = new CensusWithF();
+                cf.setCensus(ct);
+                /*
+                * Changed
+                * */
+
+                cf.setF((cluster1.getH() - ct.getPopulation()) + 5000 * (newG - previousG)); // area gap + population
+                // reduction
+                sameClusDiffF.add(cf);
+
+            }
+
+            Collections.sort(sameClusDiffF, CensusWithF.fComparator); // sort according to area gap
+            CensusTract ct = sameClusDiffF.get(0).getCensus(); // get the min gap neighbour
+
+
+            //Now compare clusters after adding best polygons for their cost of growing
+
+            long numNeighbours = numberOfNeighboursOfClusterAfterAddingCensus(cluster1, ct);
+
+            cluster1.setF((cluster1.getH() - ct.getPopulation()) - (250 * numNeighbours));// set the f as
+            // minimum neighbours + min population so we can choose minimum population + minimum cost to grow
+            System.out.println("ClusId N = " + cluster1.getClusterId() + " NeighBours N =" + numNeighbours + " H " +
+                    (cluster1.getH() - ct.getPopulation()));
+            System.out.println("");
 
         }
+
+
         ArrayList<Cluster> sortCluster = new ArrayList<Cluster>();
         sortCluster.addAll(clusterCol);
         Collections.sort(sortCluster, Cluster.fComparatorBack);
-        cluster = sortCluster.get(0); //cluster which having minimum population + minimum cost to grow will be chosen
+        cluster = sortCluster.get(0);
+
+        Iterator<Cluster> it = sortCluster.iterator();
+        while (it.hasNext()) {
+            Cluster clusterT = it.next();
+            if (cluster.getH() > 0) {
+                cluster = clusterT;
+                System.out.println("******************************************************************************");
+                System.out.println("Selected T = " + clusterT.getClusterId());
+                System.out.println("******************************************************************************");
+                break;
+            }
+
+        }
+        System.out.println("******************************************************************************");
+        System.out.println("Selected = " + cluster.getClusterId());
+        System.out.println("******************************************************************************");
+        System.out.println("");
         return cluster;
     }
 
@@ -376,11 +481,38 @@ public class DistrictBoundryDefiner implements Serializable{
     }
 
     /*
+    * To get the number of neighbours of a given cluster
+    * */
+    public long numberOfNeighboursOfCluster(Cluster cluster) {
+        HashSet<Long> neighboursOfCluster = new HashSet<Long>();
+
+        for (long censusId : cluster.getCensusIds()) {
+            neighboursOfCluster.addAll(getValidNeighbours(censusMap.get(censusId).getNeighbourSet()));
+        }
+
+        return neighboursOfCluster.size();
+    }
+
+    /*
+    * To get the number of neighbours after adding a census to a given cluster.
+    * */
+    public long numberOfNeighboursOfClusterAfterAddingCensus(Cluster cluster, CensusTract censusTract) {
+        HashSet<Long> neighboursOfCluster = new HashSet<Long>();
+
+        for (long censusId : cluster.getCensusIds()) {
+            neighboursOfCluster.addAll(getValidNeighbours(censusMap.get(censusId).getNeighbourSet()));
+        }
+        neighboursOfCluster.addAll(getValidNeighbours(censusTract.getNeighbourSet()));
+
+        return neighboursOfCluster.size() - 1;
+    }
+
+
+    /*
     * Adding the best polygon to best cluster
     * */
 
     public boolean growingTheBestCluster(Cluster cluster) {
-
         HashSet<Long> neighboursOfCluster;
         ArrayList<CensusTract> actualNeighbours;
         neighboursOfCluster = new HashSet<Long>();
@@ -408,22 +540,23 @@ public class DistrictBoundryDefiner implements Serializable{
             cluster1.setG(cluster.getG());
             cluster1.setH(cluster.getH());
 
-            double maxLong = (cluster1.getMaxLongitude() >= ct.getMaxLongitude()) ? cluster1.getMaxLongitude() : ct
+
+            double maxLong = (cluster.getMaxLongitude() >= ct.getMaxLongitude()) ? cluster.getMaxLongitude() : ct
                     .getMaxLongitude();
 
-            double maxLat = (cluster1.getMaxLatitude() >= ct.getMaxLatitude()) ? cluster1.getMaxLatitude() : ct
+            double maxLat = (cluster.getMaxLatitude() >= ct.getMaxLatitude()) ? cluster.getMaxLatitude() : ct
                     .getMaxLatitude();
 
-            double minLong = (cluster1.getMinLongitude() <= ct.getMinLongitude()) ? cluster1.getMinLongitude() : ct
+            double minLong = (cluster.getMinLongitude() <= ct.getMinLongitude()) ? cluster.getMinLongitude() : ct
                     .getMinLongitude();
 
-            double minLat = (cluster1.getMinLatitude() <= ct.getMinLatitude()) ? cluster1.getMinLatitude() : ct
+            double minLat = (cluster.getMinLatitude() <= ct.getMinLatitude()) ? cluster.getMinLatitude() : ct
                     .getMinLatitude();
 
-            double previousG = cluster1.getG();
-            double newG = perimeterOfRectangle(minLat,minLong,maxLat,maxLong);
-
-            double f = (cluster1.getH() - ct.getPopulation()) + (newG - previousG);
+            double previousG = cluster.getG();
+            double newG = perimeterOfRectangle(minLat, minLong, maxLat, maxLong);
+//Multiply By 5000
+            double f = (cluster1.getH() - ct.getPopulation()) + 5000 * (newG - previousG);
             cluster1.setF(f);
             cluster1.bestPoly = ct;
 
@@ -435,6 +568,32 @@ public class DistrictBoundryDefiner implements Serializable{
         addCensusTractToCluster(cluster, bestCensus);
         return true;
 
+    }
+
+    public double getGiniCoefficient() {
+        ArrayList<Long> population = new ArrayList<>();
+        for (Cluster cluster : finishedClusters.values()) {
+            population.add(cluster.getPopulation());
+        }
+        Collections.sort(population);
+        int n = population.size();
+        double giniCoefficient = 0;
+
+        double upperSigma = 0;
+        double lowerSigma = 0;
+
+        for (int i = 1; i <= n; i++) {
+            upperSigma += (n + 1 - i) * population.get(i - 1);
+
+            lowerSigma += population.get(i - 1);
+
+        }
+
+        giniCoefficient = (n + 1 - (2 * upperSigma / lowerSigma)) / n;
+
+        System.out.println(" " + giniCoefficient);
+
+        return giniCoefficient;
     }
 
     /*
@@ -516,7 +675,7 @@ public class DistrictBoundryDefiner implements Serializable{
                 minimumLongiitude, "K");
         double distanceOfLSide = distanceCalculator.distance(minimumLatitude, minimumLongiitude, minimumLatitude,
                 maximumLongiitude, "K");
-        double recPerimeter = (distanceOfSSide *2) +  (distanceOfLSide*2);
+        double recPerimeter = (distanceOfSSide * distanceOfLSide);
 
         return recPerimeter;
 
@@ -601,8 +760,10 @@ public class DistrictBoundryDefiner implements Serializable{
 
         cluster.setCensusIds(ct.getCensusId());
 
-        double g = perimeterOfRectangle(minLat,minLong,maxLat,maxLong);
+        double g = perimeterOfRectangle(minLat, minLong, maxLat, maxLong);
         cluster.setG(g);
+
+        cluster.cencusTracts.add(ct);
 
     }
 

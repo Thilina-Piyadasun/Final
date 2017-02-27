@@ -1,5 +1,7 @@
 package org.abithana.prescription.impl.Redistricting;
 
+import com.vividsolutions.jts.geom.Geometry;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -9,7 +11,7 @@ import java.util.TreeSet;
 /**
  * Created by malakaganga on 1/2/17.
  */
-public class CensusTract implements Serializable{
+public class CensusTract implements Serializable {
 
     private long censusId;
     private long population;
@@ -26,6 +28,16 @@ public class CensusTract implements Serializable{
     private TreeSet<Double> sortedLatPoints = new TreeSet<Double>();
     private TreeSet<Double> sortedLongPoints = new TreeSet<Double>();
     private HashSet<Long> neighbourSet = new HashSet<Long>();
+
+    public Geometry getBlockPolygon() {
+        return blockPolygon;
+    }
+
+    public void setBlockPolygon(Geometry blockPolygon) {
+        this.blockPolygon = blockPolygon;
+    }
+
+    private Geometry blockPolygon;
 
     public HashSet<Long> getNeighbourSet() {
         return neighbourSet;
@@ -79,7 +91,7 @@ public class CensusTract implements Serializable{
         double distanceOfLSide = distanceCalculator.distance(minLatitude, minLongitude, minLatitude,
                 maxLongitude, "K");
 
-        double recPerimeter = (distanceOfSSide *2) +  (distanceOfLSide*2);
+        double recPerimeter = (distanceOfSSide ) *  (distanceOfLSide);
 
         this.perimeter = recPerimeter;
     }
@@ -221,7 +233,7 @@ public class CensusTract implements Serializable{
     }
 
     public void setMinLongitude() {
-        this.minLongitude = sortedLongPoints.first();
+       this.minLongitude = sortedLongPoints.first();
     }
 
     public double getMinLatitude() {

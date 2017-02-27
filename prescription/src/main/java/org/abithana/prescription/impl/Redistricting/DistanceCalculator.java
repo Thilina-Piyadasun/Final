@@ -1,12 +1,11 @@
-package org.abithana.prescription.impl.Redistricting;
-/**
+package org.abithana.prescription.impl.Redistricting; /**
  * Created by malakaganga on 1/6/17.
  */
 import java.util.*;
 import java.lang.*;
 import java.io.*;
 
-class DistanceCalculator  implements Serializable{
+class DistanceCalculator implements Serializable {
 
     public static void main(String[] args) {
         DistanceCalculator dt = new DistanceCalculator();
